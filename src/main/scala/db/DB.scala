@@ -1,9 +1,10 @@
 package db
 
 import scalaz.{Applicative, Equal}
+import scalaz.Isomorphism.IsoSet
 import scalaz.scalacheck.ScalazProperties.applicative
 import scalaz.syntax.apply._
-import org.scalacheck.Arbitrary
+import org.scalacheck.{Arbitrary, Prop}
 
 trait =:!=[A, B]
 
@@ -59,8 +60,10 @@ object Column {
   }
 }
 
+// constructive proof that there are exhaustive column defs for every field on A
 trait Columns[A] {
   val col: Column[A, Any, A]
+  lazy val iso = IsoSet(col.read, col.read)
 }
 
 object Columns {
@@ -126,4 +129,6 @@ object Example extends App {
     }
   }
   applicative.laws[Data.CF].check
+  Prop.forAll((d: Data) => Data.columns.iso.to(d) == d && Data.columns.iso.from(d) == d)
+    .label("data.columns.iso").check
 }
